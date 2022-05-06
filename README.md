@@ -21,6 +21,16 @@ encoder.encode("Hello hello, hey, hello hello")
 encoder.encode(["Life is too short to eat bad food!"] * 2)
 ```
 
+# Benchmark 
+Indicative benchmark for CPU usage with smallest and largest model on `sentence-transformers`.
+
+| model                                 | Type   | default | ONNX | ONNX+quantized |
+|---------------------------------------|--------|---------|------|----------------|
+| paraphrase-albert-small-v2            | memory | 1x      | 1x   | 1x             |
+|                                       | speed  | 1x      | 2x   | 5x             |
+| paraphrase-multilingual-mpnet-base-v2 | memory | 1x      | 1x   | 4x             |
+|                                       | speed  | 1x      | 2x   | 5x             |
+
 # Shout-Out
 
 This package heavily leans on `sentence-transformers` and `txtai`.
