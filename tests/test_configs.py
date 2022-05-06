@@ -4,5 +4,3 @@ def test_standalone():
 
 def test_quantize():
     from fast_sentence_transformers.examples import test_quantize  # noqa: F401
-
-test_quantize()
