@@ -1,0 +1,55 @@
+[tool.poetry]
+name = "fast-sentence-transformers"
+version = "0.1.0"
+description = "This repository contains code to run faster sentence-transformers using tools like quantization, ONNX and pruning."
+authors = ["David Berenstein <david.berenstein@pandoraintelligence.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/pandora-intelligence/fast-sentence-transformers"
+repository = "https://github.com/pandora-intelligence/fast-sentence-transformers"
+documentation = "https://github.com/pandora-intelligence/fast-sentence-transformers"
+keywords = ["sentence-transformerx", "ONNX", "NLP"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development"
+]
+
+
+[tool.poetry.dependencies]
+python = ">=3.7.1,<4.0"
+transformers = {extras = ["onnx"], version = "^4.18.0"}
+torch = "^1.11.0"
+sentence-transformers = "^2.2.0"
+txtai = {extras = ["pipeline"], version = "^4.3.1"}
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0.1"
+flake8 = "^4.0.1"
+black = "^22.3.0"
+flake8-bugbear = "^22.3.23"
+flake8-docstrings = "^1.6.0"
+isort = "^5.10.1"
+pep8-naming = "^0.12.1"
+pre-commit = "^2.17.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+
+[tool.black]
+line-length = 119
+experimental-string-processing = true
+
+[tool.isort]
+profile = "black"
+src_paths = ["fast_sentence_transformers"]
