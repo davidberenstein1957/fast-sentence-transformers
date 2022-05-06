@@ -182,7 +182,9 @@ class FastSentenceTransformer(object):
             modules_config = json.load(fIn)
         tf_from_s_path = os.path.join(self.model_path, modules_config[0].get("path"))
 
-        tokenizer = AutoTokenizer.from_pretrained(tf_from_s_path, do_lower_case=True, cache_dir=self.cache_folder)
+        tokenizer = AutoTokenizer.from_pretrained(
+            tf_from_s_path, do_lower_case=True, cache_dir=self.cache_folder, fast=True
+        )
         self.tokenizer = tokenizer
 
         if os.path.exists(self.export_model_name):
