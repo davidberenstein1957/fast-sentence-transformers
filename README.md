@@ -21,6 +21,6 @@ encoder.encode("Hello hello, hey, hello hello")
 encoder.encode(["Life is too short to eat bad food!"] * 2)
 ```
 
-# shoutout
+# Shout-Out
 
 This package heavily leans on `sentence-transformers` and `txtai`.
