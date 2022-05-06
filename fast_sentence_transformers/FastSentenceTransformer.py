@@ -2,7 +2,7 @@
 import json
 import logging
 import os
-from typing import Iterable, Optional, Union
+from typing import Iterable, List, Optional, Union
 
 import numpy as np
 import onnxruntime
@@ -12,7 +12,8 @@ import torch as t
 from sentence_transformers import __MODEL_HUB_ORGANIZATION__, __version__
 from sentence_transformers.models import Pooling
 from sentence_transformers.util import snapshot_download
-from torch import nn
+from torch import Tensor, nn
+from tqdm.autonotebook import trange
 from transformers import AutoTokenizer
 from txtai.pipeline import HFOnnx
 
@@ -193,7 +194,105 @@ class FastSentenceTransformer(object):
             self.onnx(self.model_path, "default", self.export_model_name, quantize=self.quantize)
             print(f"Model exported at: {self.export_model_name}")
 
-    def encode(self, sentences: list) -> np.array:
+    def _text_length(self, text: Union[List[int], List[List[int]]]):
+        """
+        Help function to get the length for the input text. Text can be either
+        a list of ints (which means a single text as input), or a tuple of list of ints
+        (representing several text inputs to the model).
+        """
+
+        if isinstance(text, dict):  # {key: value} case
+            return len(next(iter(text.values())))
+        elif not hasattr(text, "__len__"):  # Object has no len() method
+            return 1
+        elif len(text) == 0 or isinstance(text[0], int):  # Empty string or list of ints
+            return len(text)
+        else:
+            return sum([len(t) for t in text])  # Sum of length of individual strings
+
+    def encode(
+        self,
+        sentences: Union[str, List[str]],
+        batch_size: int = 32,
+        show_progress_bar: bool = None,
+        output_value: str = "sentence_embedding",
+        convert_to_numpy: bool = True,
+        convert_to_tensor: bool = False,
+        device: str = None,
+        normalize_embeddings: bool = True,
+    ) -> Union[List[Tensor], np.ndarray, Tensor]:
+        """
+        Computes sentence embeddings
+
+        :param sentences: the sentences to embed
+        :param batch_size: the batch size used for the computation
+        :param show_progress_bar: Output a progress bar when encode sentences
+        :param output_value:  Default sentence_embedding, to get sentence embeddings.
+            Can be set to token_embeddings to get wordpiece token embeddings. Set to None, to get all output values
+        :param convert_to_numpy: If true, the output is a list of numpy vectors.
+            Else, it is a list of pytorch tensors.
+        :param convert_to_tensor: If true, you get one large tensor as return.
+            Overwrites any setting from convert_to_numpy
+        :param device: Which torch.device to use for the computation
+        :param normalize_embeddings: If set to true, returned vectors will have length 1.
+            In that case, the faster dot-product (util.dot_score) instead of cosine similarity can be used.
+
+        :return:
+           By default, a list of tensors is returned.
+            If convert_to_tensor, a stacked tensor is returned. If convert_to_numpy, a numpy matrix is returned.
+        """
+
+        if show_progress_bar is None:
+            show_progress_bar = (
+                logger.getEffectiveLevel() == logging.INFO or logger.getEffectiveLevel() == logging.DEBUG
+            )
+
+        if convert_to_tensor:
+            convert_to_numpy = False
+
+        if output_value != "sentence_embedding":
+            convert_to_tensor = False
+            convert_to_numpy = False
+            raise NotImplementedError("This package only handles sentence_embeddings")
+
+        input_was_string = False
+        if isinstance(sentences, str) or not hasattr(
+            sentences, "__len__"
+        ):  # Cast an individual sentence to a list with length 1
+            sentences = [sentences]
+            input_was_string = True
+
+        all_embeddings = []
+        length_sorted_idx = np.argsort([-self._text_length(sen) for sen in sentences])
+        sentences_sorted = [sentences[idx] for idx in length_sorted_idx]
+
+        for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
+            sentences_batch = sentences_sorted[start_index : start_index + batch_size]
+
+            embeddings = self.encode_batch(sentences_batch)
+
+            # fixes for #522 and #487 to avoid oom problems on gpu with large datasets
+            if convert_to_numpy:
+                embeddings = embeddings.cpu().detach().numpy()
+
+            if normalize_embeddings:
+                embeddings = np.linalg.norm(embeddings, ord=2, axis=1, keepdims=False)
+
+            all_embeddings.extend(embeddings)
+
+        all_embeddings = [all_embeddings[idx] for idx in np.argsort(length_sorted_idx)]
+
+        if convert_to_tensor:
+            all_embeddings = torch.stack(all_embeddings)
+        elif convert_to_numpy:
+            all_embeddings = np.asarray([emb for emb in all_embeddings])
+
+        if input_was_string:
+            all_embeddings = all_embeddings[0]
+
+        return all_embeddings
+
+    def encode_batch(self, sentences: list) -> np.array:
         """
         1. The function takes a list of sentences as input.
         2. It then converts the sentences into a format that can be understood by the ONNX model.
@@ -216,7 +315,7 @@ class FastSentenceTransformer(object):
             }
         )
         result = ort_result.get("sentence_embedding")
-        return result.cpu().detach().numpy()
+        return result
 
     def _load_sbert_pooling(self):
         """
@@ -233,7 +332,8 @@ class FastSentenceTransformer(object):
 
     def _load_sbert_session(self):
         """
-        The function loads the ONNX model into an ONNXRuntime session, and sets the number of threads to the number of
+        The function loads the ONNX model into an ONNXRuntime session,
+        and sets the number of threads to the number of
         logical cores on the machine
         :return: The session is being returned.
         """
