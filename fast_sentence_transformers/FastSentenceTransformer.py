@@ -219,7 +219,7 @@ class FastSentenceTransformer(object):
         convert_to_numpy: bool = True,
         convert_to_tensor: bool = False,
         device: str = None,
-        normalize_embeddings: bool = True,
+        normalize_embeddings: bool = False,
     ) -> Union[List[Tensor], np.ndarray, Tensor]:
         """
         Computes sentence embeddings
