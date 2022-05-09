@@ -432,6 +432,19 @@ numpy = ">=1.19.5"
 protobuf = "*"
 
 [[package]]
+name = "onnxruntime-gpu"
+version = "1.11.1"
+description = "ONNX Runtime is a runtime accelerator for Machine Learning models"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+flatbuffers = "*"
+numpy = ">=1.21.0"
+protobuf = "*"
+
+[[package]]
 name = "packaging"
 version = "21.3"
 description = "Core utilities for Python packages"
@@ -1105,7 +1118,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4.0"
-content-hash = "6771690434b33c89fced29b2e5db841a85fce715aad38b03298493b4cf6942a7"
+content-hash = "05011ce2070d2a4b3bfb0c5e22237400675c1dd5ec4d0c56dc2c446902c73418"
 
 [metadata.files]
 atomicwrites = [
@@ -1402,6 +1415,14 @@ onnxruntime = [
     {file = "onnxruntime-1.11.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f1c0c07f49d0796ef9344fc964375509d5a8e051b77747d6409d3400401f9bcf"},
     {file = "onnxruntime-1.11.0-cp39-cp39-win32.whl", hash = "sha256:afbf4e3a0cbb4a3ce3b0cf0fecff7018f0dd25c1824219f0318db10748981c75"},
     {file = "onnxruntime-1.11.0-cp39-cp39-win_amd64.whl", hash = "sha256:125d4332f08f34d43a6e848d1a042cdcc99ab0efecc5c3023b0948292ed1a927"},
+]
+onnxruntime-gpu = [
+    {file = "onnxruntime_gpu-1.11.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a4f5317838f4816a9b21fcb43d551ac95f9d35ca8ecd5c959419b3b94d458342"},
+    {file = "onnxruntime_gpu-1.11.1-cp37-cp37m-win_amd64.whl", hash = "sha256:c79f42cbdee18e059c0ba43f0efeb7117539dfb76d6ed0e4a9ecc34093ed97b3"},
+    {file = "onnxruntime_gpu-1.11.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:be1766a9d60ec774e1a7a0279ade5ec001c5d528f2f2dbe9f8d02133e49d1d68"},
+    {file = "onnxruntime_gpu-1.11.1-cp38-cp38-win_amd64.whl", hash = "sha256:3f1363e9ba30051cc3d649beefbd12047e1c41b5c47bcacfbfb23b74a7d68f7b"},
+    {file = "onnxruntime_gpu-1.11.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3fad0d3df58815c11160714433ca3bcff6d9a06f721bcc97ade46abce30aea72"},
+    {file = "onnxruntime_gpu-1.11.1-cp39-cp39-win_amd64.whl", hash = "sha256:dc34be44224aa855d7ab17f61942b665788a2136ae4f71ee857fa47b38d1fdb8"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
