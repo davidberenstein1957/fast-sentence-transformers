@@ -153,7 +153,10 @@ class FastSentenceTransformer(object):
             fast_onnxprovider = "CPUExecutionProvider"
         else:
             if "CUDAExecutionProvider" not in onnxproviders:
-                logger.warning("Using CPU. Try installing 'onnxruntime-gpu' or 'fast-sentence-transformers[gpu]'.")
+                logger.warning(
+                    "Using CPU. Try installing 'CUDNN' and 'CUDA' in line with"
+                    " https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html."
+                )
                 fast_onnxprovider = "CPUExecutionProvider"
             else:
                 fast_onnxprovider = "CUDAExecutionProvider"
