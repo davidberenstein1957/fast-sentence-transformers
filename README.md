@@ -1,5 +1,5 @@
 # Fast Sentence Transformers
-This repository contains code to run faster `sentence-transformers` using tools like quantization and `ONNX`. Just run your model much faster, while reducing memory a lot of memory. There is not much to it!
+This repository contains code to run faster `sentence-transformers` using tools like quantization and `ONNX`. Just run your model much faster, while a lot of memory. There is not much to it!
 
 [![Python package](https://github.com/Pandora-Intelligence/fast-sentence-transformers/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/Pandora-Intelligence/fast-sentence-transformers/actions/workflows/python-package.yml)
 [![Current Release Version](https://img.shields.io/github/release/pandora-intelligence/fast-sentence-transformers.svg?style=flat-square&logo=github)](https://github.com/pandora-intelligence/fast-sentence-transformers/releases)
