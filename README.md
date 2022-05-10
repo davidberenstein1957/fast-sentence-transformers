@@ -15,7 +15,7 @@ This repository contains code to run faster `sentence-transformers` using tools 
 from fast_sentence_transformers import FastSentenceTransformer as SentenceTransformer
 
 # use any sentence-transformer
-encoder = SentenceTransformer("all-MiniLM-L6-v2", device=-1, quantize=True)
+encoder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu", quantize=True)
 
 encoder.encode("Hello hello, hey, hello hello")
 encoder.encode(["Life is too short to eat bad food!"] * 2)
