@@ -28,7 +28,6 @@ class FastSentenceTransformer(object):
         device: Optional[str] = None,
         cache_folder: Optional[str] = None,
         use_auth_token: Union[bool, str, None] = None,
-        onnx_folder: str = "models",
         enable_overwrite: bool = True,
         quantize: bool = False,
     ):
@@ -43,7 +42,10 @@ class FastSentenceTransformer(object):
                     torch_cache_home = _get_torch_home()
                 except ImportError:
                     torch_cache_home = os.path.expanduser(
-                        os.getenv("TORCH_HOME", os.path.join(os.getenv("XDG_CACHE_HOME", "~/.cache"), "torch"))
+                        os.getenv(
+                            "TORCH_HOME",
+                            os.path.join(os.getenv("XDG_CACHE_HOME", "~/.cache"), "torch"),
+                        )
                     )
 
                 cache_folder = os.path.join(torch_cache_home, "sentence_transformers")
@@ -137,15 +139,16 @@ class FastSentenceTransformer(object):
 
                 model_path = os.path.join(cache_folder, model_name_or_path.replace("/", "_"))
 
-                # Download from hub with caching
-                snapshot_download(
-                    model_name_or_path,
-                    cache_dir=cache_folder,
-                    library_name="sentence-transformers",
-                    library_version=__version__,
-                    ignore_files=["flax_model.msgpack", "rust_model.ot", "tf_model.h5"],
-                    use_auth_token=use_auth_token,
-                )
+                if not os.path.exists(os.path.join(model_path, "modules.json")):
+                    # Download from hub with caching
+                    snapshot_download(
+                        model_name_or_path,
+                        cache_dir=cache_folder,
+                        library_name="sentence-transformers",
+                        library_version=__version__,
+                        ignore_files=["flax_model.msgpack", "rust_model.ot", "tf_model.h5"],
+                        use_auth_token=use_auth_token,
+                    )
 
         onnxproviders = onnxruntime.get_available_providers()
 
@@ -153,28 +156,33 @@ class FastSentenceTransformer(object):
             fast_onnxprovider = "CPUExecutionProvider"
         else:
             if "CUDAExecutionProvider" not in onnxproviders:
-                logger.warning(
-                    "Using CPU. Try installing 'CUDNN' and 'CUDA' in line with"
-                    " https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html."
-                )
+                logger.warning("Using CPU. Try installing 'onnxruntime-gpu' or 'fast-sentence-transformers[gpu]'.")
                 fast_onnxprovider = "CPUExecutionProvider"
             else:
                 fast_onnxprovider = "CUDAExecutionProvider"
 
-        os.makedirs(onnx_folder, exist_ok=True)
-        self.onnx_folder = onnx_folder
         self.model_path = model_path
         self.fast_onnxprovider = fast_onnxprovider
         self.cache_folder = cache_folder
         self.enable_overwrite = enable_overwrite
-        self.export_model_name = os.path.join(self.onnx_folder, f"{model_path}_quantized_{quantize}.onnx".lower())
 
         if os.path.exists(os.path.join(self.model_path, "modules.json")):  # Load as SentenceTransformer model
+            self._load_sbert_model(model_path)
             self.sbertmodel2onnx()
             self.session = self._load_sbert_session()
             self.pooling_model = self._load_sbert_pooling()
         else:
             raise ValueError("AutoModels are not Implemented!")
+
+    def _load_sbert_model(self, model_path):
+        """
+        Loads a full sentence-transformers model
+        """
+        # Check if the config_sentence_transformers.json file exists (exists since v2 of the framework)
+        config_sentence_transformers_json_path = os.path.join(model_path, "config_sentence_transformers.json")
+        if os.path.exists(config_sentence_transformers_json_path):
+            with open(config_sentence_transformers_json_path) as fIn:
+                self._model_config = json.load(fIn)
 
     def sbertmodel2onnx(self):
         """
@@ -191,7 +199,7 @@ class FastSentenceTransformer(object):
             tf_from_s_path, do_lower_case=True, cache_dir=self.cache_folder, fast=True
         )
         self.tokenizer = tokenizer
-
+        self.export_model_name = os.path.join(self.model_path, f"quantized_{self.quantize}.onnx".lower())
         if os.path.exists(self.export_model_name):
             print(f"Model found at: {self.export_model_name}")
         else:
