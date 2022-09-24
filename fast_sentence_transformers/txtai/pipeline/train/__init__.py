@@ -4,6 +4,4 @@ Train imports
 
 from .hfonnx import HFOnnx
 
-__all__ = [
-    "Pipeline"
-]
+__all__ = ["HFOnnx"]

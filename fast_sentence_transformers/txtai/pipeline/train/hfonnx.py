@@ -151,7 +151,10 @@ class HFOnnx(Tensors):
                 ),
                 AutoModelForQuestionAnswering.from_pretrained,
             ),
-            "text-classification": (OrderedDict({"logits": {0: "batch"}}), AutoModelForSequenceClassification.from_pretrained),
+            "text-classification": (
+                OrderedDict({"logits": {0: "batch"}}),
+                AutoModelForSequenceClassification.from_pretrained,
+            ),
         }
 
         # Aliases

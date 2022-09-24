@@ -280,7 +280,7 @@ class FastSentenceTransformer(object):
         sentences_sorted = [sentences[idx] for idx in length_sorted_idx]
 
         for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
-            sentences_batch = sentences_sorted[start_index: start_index + batch_size]
+            sentences_batch = sentences_sorted[start_index : start_index + batch_size]
 
             embeddings = self.encode_batch(sentences_batch)
 

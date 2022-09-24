@@ -4,9 +4,7 @@ Pooling module
 
 import numpy as np
 import torch
-
 from torch import nn
-
 from transformers import AutoTokenizer
 
 from .models import Models
@@ -62,8 +60,9 @@ class Pooling(nn.Module):
 
         for chunk in self.chunk(documents, batch):
             # Tokenize input
-            inputs = self.tokenizer(chunk, padding=True, truncation="longest_first",
-                                    return_tensors="pt", max_length=self.maxlength)
+            inputs = self.tokenizer(
+                chunk, padding=True, truncation="longest_first", return_tensors="pt", max_length=self.maxlength
+            )
 
             # Move inputs to device
             inputs = inputs.to(self.device)
@@ -88,7 +87,7 @@ class Pooling(nn.Module):
             list of evenly sized batches with the last batch having the remaining elements
         """
 
-        return [texts[x: x + size] for x in range(0, len(texts), size)]
+        return [texts[x : x + size] for x in range(0, len(texts), size)]
 
     def forward(self, **inputs):
         """

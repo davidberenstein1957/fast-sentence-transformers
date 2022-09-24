@@ -1,4 +1,3 @@
-
 """
 Registry module
 """
