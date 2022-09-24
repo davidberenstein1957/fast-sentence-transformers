@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fast-sentence-transformers"
-version = "0.3.2.1"
+version = "0.3.2.2"
 description = "This repository contains code to run faster sentence-transformers using tools like quantization, ONNX and pruning."
 authors = ["David Berenstein <david.berenstein@pandoraintelligence.com>"]
 license = "MIT"
