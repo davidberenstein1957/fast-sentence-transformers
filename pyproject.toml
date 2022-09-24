@@ -28,7 +28,7 @@ python = ">=3.8,<3.12"
 sentence-transformers = ">=2.1.0"
 onnxruntime = "^1.10"
 psutil = "^5.9.2"
-torch = "^1.10"
+
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0.1"

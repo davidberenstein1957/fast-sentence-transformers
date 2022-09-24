@@ -6,3 +6,5 @@ from .models import Models
 from .onnx import OnnxModel
 from .pooling import MeanPooling, Pooling
 from .registry import Registry
+
+__all__ = ["Models", "OnnxModel", "MeanPooling", "Pooling", "Registry"]
