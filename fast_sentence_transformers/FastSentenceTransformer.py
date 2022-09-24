@@ -15,7 +15,8 @@ from sentence_transformers.util import snapshot_download
 from torch import Tensor, nn
 from tqdm.autonotebook import trange
 from transformers import AutoTokenizer
-from txtai.pipeline import HFOnnx
+
+from fast_sentence_transformers.txtai import HFOnnx
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +157,7 @@ class FastSentenceTransformer(object):
             fast_onnxprovider = "CPUExecutionProvider"
         else:
             if "CUDAExecutionProvider" not in onnxproviders:
-                logger.warning("Using CPU. Try installing 'onnxruntime-gpu' or 'fast-sentence-transformers[gpu]'.")
+                logger.warning("Using CPU. Try installing 'onnxruntime-gpu'.")
                 fast_onnxprovider = "CPUExecutionProvider"
             else:
                 fast_onnxprovider = "CUDAExecutionProvider"
@@ -279,7 +280,7 @@ class FastSentenceTransformer(object):
         sentences_sorted = [sentences[idx] for idx in length_sorted_idx]
 
         for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
-            sentences_batch = sentences_sorted[start_index : start_index + batch_size]
+            sentences_batch = sentences_sorted[start_index: start_index + batch_size]
 
             embeddings = self.encode_batch(sentences_batch)
 
