@@ -28,6 +28,32 @@ from fast_sentence_transformers.txtai.models.pooling import MeanPooling
 from fast_sentence_transformers.txtai.pipeline.tensors import Tensors
 
 
+class WrapInferenceSession:
+    """
+    # needed to allow for mac m1 serialization
+    https://github.com/microsoft/onnxruntime/pull/800#issuecomment-844326099
+    https://github.com/Pandora-Intelligence/classy-classification/issues/14
+    """
+
+    def __init__(self, onnx_bytes, sess_options, provider):
+        self.sess = InferenceSession(onnx_bytes.SerializeToString(), sess_options, ["CPUExecutionProvider"])
+        self.onnx_bytes = onnx_bytes
+        self.sess_options = sess_options
+        self.provider = provider
+
+    def run(self, *args):
+        return self.sess.run(*args)
+
+    def __getstate__(self):
+        return {"onnx_bytes": self.onnx_bytes}
+
+    def __setstate__(self, values):
+        self.onnx_bytes = values["onnx_bytes"]
+        self.sess_options = values["sess_options"]
+        self.provider = values["provider"]
+        self.sess = InferenceSession(self.onnx_bytes.SerializeToString(), self.sess_options, self.provider)
+
+
 class HFOnnx(Tensors):
     """
     Exports a Hugging Face Transformer model to ONNX.
@@ -110,7 +136,7 @@ class HFOnnx(Tensors):
         sess_option = SessionOptions()
         sess_option.optimized_model_filepath = output
         sess_option.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_BASIC
-        _ = InferenceSession(output, sess_option, ["CPUExecutionProvider"])
+        _ = WrapInferenceSession(output, sess_option, ["CPUExecutionProvider"])
 
         # Quantize optimized model
         quantize_dynamic(output, output, optimize_model=False)
