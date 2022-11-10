@@ -7,6 +7,14 @@ This repository contains code to run faster `sentence-transformers` using tools 
 [![PyPi downloads](https://static.pepy.tech/personalized-badge/fast-sentence-transformers?period=total&units=international_system&left_color=grey&right_color=orange&left_text=pip%20downloads)](https://pypi.org/project/fast-sentence-transformers/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/ambv/black)
 
+# Install
+```bash
+pip install fast-sentence-transformers
+```
+Or for GPU support.
+```bash
+pip install fast-sentence-transformers[gpu]
+```
 
 # Quickstart
 
@@ -21,15 +29,15 @@ encoder.encode("Hello hello, hey, hello hello")
 encoder.encode(["Life is too short to eat bad food!"] * 2)
 ```
 
-# Benchmark 
+# Benchmark
 Indicative benchmark for CPU usage with smallest and largest model on `sentence-transformers`. Note, ONNX doesn't have GPU support for quantization yet.
 
-| model                                 | Type   | default | ONNX | ONNX+quantized |ONNX+GPU |
-|---------------------------------------|--------|---------|------|----------------|---------|
-| paraphrase-albert-small-v2            | memory | 1x      | 1x   | 1x             |1x       |
-|                                       | speed  | 1x      | 2x   | 5x             |20x      |
-| paraphrase-multilingual-mpnet-base-v2 | memory | 1x      | 1x   | 4x             |4x       |
-|                                       | speed  | 1x      | 2x   | 5x             |20x      |
+| model                                 | Type   | default | ONNX | ONNX+quantized | ONNX+GPU |
+| ------------------------------------- | ------ | ------- | ---- | -------------- | -------- |
+| paraphrase-albert-small-v2            | memory | 1x      | 1x   | 1x             | 1x       |
+|                                       | speed  | 1x      | 2x   | 5x             | 20x      |
+| paraphrase-multilingual-mpnet-base-v2 | memory | 1x      | 1x   | 4x             | 4x       |
+|                                       | speed  | 1x      | 2x   | 5x             | 20x      |
 
 # Shout-Out
 
