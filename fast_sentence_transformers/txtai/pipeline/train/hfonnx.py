@@ -36,7 +36,7 @@ class WrapInferenceSession:
     """
 
     def __init__(self, onnx_bytes, sess_options, provider):
-        self.sess = InferenceSession(onnx_bytes.SerializeToString(), sess_options, ["CPUExecutionProvider"])
+        self.sess = InferenceSession(onnx_bytes, sess_options, ["CPUExecutionProvider"])
         self.onnx_bytes = onnx_bytes
         self.sess_options = sess_options
         self.provider = provider
@@ -51,7 +51,7 @@ class WrapInferenceSession:
         self.onnx_bytes = values["onnx_bytes"]
         self.sess_options = values["sess_options"]
         self.provider = values["provider"]
-        self.sess = InferenceSession(self.onnx_bytes.SerializeToString(), self.sess_options, self.provider)
+        self.sess = InferenceSession(self.onnx_bytes, self.sess_options, self.provider)
 
 
 class HFOnnx(Tensors):
