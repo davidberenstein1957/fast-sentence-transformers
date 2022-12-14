@@ -31,7 +31,7 @@ def standalone_quantize():
 
 def test_quantize(standalone_quantize):
     slow_transformer, fast_transformer = standalone_quantize
-    assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=2.0e-1, atol=2.0e-1))
+    assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=3.0e-1, atol=3.0e-1))
     fast_transformer.encode([text] * 2)
 
 
@@ -45,5 +45,5 @@ def standalone_automodel():
 
 def test_standalone_automodel(standalone_automodel):
     slow_transformer, fast_transformer = standalone_automodel
-    assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=2.0e-1, atol=2.0e-1))
+    assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=3.0e-1, atol=3.0e-1))
     fast_transformer.encode([text] * 2)
