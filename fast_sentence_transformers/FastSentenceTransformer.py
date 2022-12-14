@@ -312,7 +312,7 @@ class FastSentenceTransformer(object):
     def encode_batch(self, sentences: list) -> np.array:
         """
         1. The function takes a list of sentences as input.
-        2. It then converts the sentencxes into a format that can be understood by the ONNX model.
+        2. It then converts the sentences into a format that can be understood by the ONNX model.
         3. It then runs the ONNX model on the sentences and returns the embeddings
 
         :param sentences: list of strings
