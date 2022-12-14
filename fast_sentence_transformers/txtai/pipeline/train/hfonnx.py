@@ -4,7 +4,9 @@ Hugging Face Transformers ONNX export module
 
 from collections import OrderedDict
 from io import BytesIO
-from itertools import chain
+
+# from itertools import chain
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 # Conditional import
@@ -16,13 +18,14 @@ try:
 except ImportError:
     ONNX_RUNTIME = False
 
-from torch.onnx import export
+# from torch.onnx import export as export_torch
 from transformers import (
     AutoModel,
     AutoModelForQuestionAnswering,
     AutoModelForSequenceClassification,
     AutoTokenizer,
 )
+from transformers.onnx import FeaturesManager, export
 
 from fast_sentence_transformers.txtai.models.pooling import MeanPooling
 from fast_sentence_transformers.txtai.pipeline.tensors import Tensors
@@ -81,23 +84,38 @@ class HFOnnx(Tensors):
             model = model(path)
             tokenizer = AutoTokenizer.from_pretrained(path)
 
+        # load config
+        _, model_onnx_config = FeaturesManager.check_supported_model_or_raise(model)
+        onnx_config = model_onnx_config(model.config)
+
         # Generate dummy inputs
-        dummy = dict(tokenizer(["test inputs"], return_tensors="pt"))
+        # dummy = dict(tokenizer(["test inputs"], return_tensors="pt"))
 
         # Default to BytesIO if no output file provided
+        # if isinstance(output, str):
+        #     output = Path(output)
         output = output if output else BytesIO()
 
-        # Export model to ONNX
         export(
-            model,
-            (dummy,),
-            output,
-            opset_version=opset,
-            do_constant_folding=True,
-            input_names=list(inputs.keys()),
-            output_names=list(outputs.keys()),
-            dynamic_axes=dict(chain(inputs.items(), outputs.items())),
+            model=model,
+            output=Path(output),
+            preprocessor=tokenizer,
+            tokenizer=None,
+            config=onnx_config,
+            opset=12,
         )
+
+        # Export model to ONNX
+        # export_torch(
+        #     model,
+        #     (dummy,),
+        #     output,
+        #     opset_version=opset,
+        #     do_constant_folding=True,
+        #     input_names=list(inputs.keys()),
+        #     output_names=list(outputs.keys()),
+        #     dynamic_axes=dict(chain(inputs.items(), outputs.items())),
+        # )
 
         # Quantize model
         if quantize:

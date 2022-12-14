@@ -1,23 +1,49 @@
+import numpy as np
 import pytest
+from sentence_transformers import SentenceTransformer
 
 from fast_sentence_transformers import FastSentenceTransformer
+
+text = "Hello hello, hey, hello hello"
 
 
 @pytest.fixture
 def standalone():
-    return FastSentenceTransformer("all-MiniLM-L6-v2", quantize=False, cache_folder="models")
+    model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    slow_transformer = SentenceTransformer(model, cache_folder="tmp/model1")
+    fast_transformer = FastSentenceTransformer(model, quantize=False, cache_folder="tmp")
+    return (slow_transformer, fast_transformer)
 
 
 def test_standalone(standalone):
-    standalone.encode("Hello hello, hey, hello hello")
-    standalone.encode(["Life is too short to eat bad food!"] * 2)
+    slow_transformer, fast_transformer = standalone
+    assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=1.0e-3, atol=1.0e-6))
+    fast_transformer.encode([text] * 2)
 
 
 @pytest.fixture
 def standalone_quantize():
-    return FastSentenceTransformer("all-MiniLM-L6-v2", quantize=True, cache_folder="tmp")
+    model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    slow_transformer = SentenceTransformer(model, cache_folder="tmp")
+    fast_transformer = FastSentenceTransformer(model, quantize=True, cache_folder="tmp/model2")
+    return (slow_transformer, fast_transformer)
 
 
 def test_quantize(standalone_quantize):
-    standalone_quantize.encode("Hello hello, hey, hello hello")
-    standalone_quantize.encode(["Life is too short to eat bad food!"] * 2)
+    slow_transformer, fast_transformer = standalone_quantize
+    assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=3.0e-1, atol=3.0e-1))
+    fast_transformer.encode([text] * 2)
+
+
+@pytest.fixture
+def standalone_automodel():
+    model = "prajjwal1/bert-tiny"
+    slow_transformer = SentenceTransformer(model, cache_folder="tmp")
+    fast_transformer = FastSentenceTransformer(model, quantize=True, cache_folder="tmp/model3")
+    return (slow_transformer, fast_transformer)
+
+
+def test_standalone_automodel(standalone_automodel):
+    slow_transformer, fast_transformer = standalone_automodel
+    assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=3.0e-1, atol=3.0e-1))
+    fast_transformer.encode([text] * 2)

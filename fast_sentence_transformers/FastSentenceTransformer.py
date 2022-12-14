@@ -10,7 +10,7 @@ import psutil
 import torch
 import torch as t
 from sentence_transformers import __MODEL_HUB_ORGANIZATION__, __version__
-from sentence_transformers.models import Pooling
+from sentence_transformers.models import Pooling, Transformer
 from sentence_transformers.util import snapshot_download
 from torch import Tensor, nn
 from tqdm.autonotebook import trange
@@ -32,6 +32,7 @@ class FastSentenceTransformer(object):
         enable_overwrite: bool = True,
         quantize: bool = False,
     ):
+        self.device = device
         self.quantize = quantize
 
         if cache_folder is None:
@@ -168,39 +169,34 @@ class FastSentenceTransformer(object):
         self.enable_overwrite = enable_overwrite
 
         if os.path.exists(os.path.join(self.model_path, "modules.json")):  # Load as SentenceTransformer model
-            self._load_sbert_model(model_path)
-            self.sbertmodel2onnx()
-            self.session = self._load_sbert_session()
-            self.pooling_model = self._load_sbert_pooling()
-        else:
-            raise ValueError("AutoModels are not Implemented!")
+            self._load_sbert_model()
+        else:  # Load with AutoModel
+            self._load_auto_model()
+        self.model2onnx()
+        self._load_session()
 
-    def _load_sbert_model(self, model_path):
-        """
-        Loads a full sentence-transformers model
-        """
-        # Check if the config_sentence_transformers.json file exists (exists since v2 of the framework)
-        config_sentence_transformers_json_path = os.path.join(model_path, "config_sentence_transformers.json")
-        if os.path.exists(config_sentence_transformers_json_path):
-            with open(config_sentence_transformers_json_path) as fIn:
-                self._model_config = json.load(fIn)
-
-    def sbertmodel2onnx(self):
+    def model2onnx(self):
         """
         It takes a HuggingFace model, converts it to ONNX, and saves it to a specified location.
         """
         self.onnx = HFOnnx()
 
-        model_json_path = os.path.join(self.model_path, "modules.json")
-        with open(model_json_path) as fIn:
-            modules_config = json.load(fIn)
-        tf_from_s_path = os.path.join(self.model_path, modules_config[0].get("path"))
-
-        tokenizer = AutoTokenizer.from_pretrained(
-            tf_from_s_path, do_lower_case=True, cache_dir=self.cache_folder, fast=True
-        )
+        if os.path.exists(os.path.join(self.model_path, "modules.json")):
+            model_json_path = os.path.join(self.model_path, "modules.json")
+            with open(model_json_path) as fIn:
+                modules_config = json.load(fIn)
+            tf_from_s_path = os.path.join(self.model_path, modules_config[0].get("path"))
+            tokenizer = AutoTokenizer.from_pretrained(
+                tf_from_s_path, do_lower_case=True, cache_dir=self.cache_folder, fast=True
+            )
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(
+                self.model_path, do_lower_case=True, cache_dir=self.cache_folder, fast=True
+            )
         self.tokenizer = tokenizer
+
         self.export_model_name = os.path.join(self.model_path, f"quantized_{self.quantize}.onnx".lower())
+
         if os.path.exists(self.export_model_name):
             print(f"Model found at: {self.export_model_name}")
         else:
@@ -222,6 +218,9 @@ class FastSentenceTransformer(object):
             return len(text)
         else:
             return sum([len(t) for t in text])  # Sum of length of individual strings
+
+    def __call__(self, *args, **kwargs):
+        return self.encode(*args, **kwargs)
 
     def encode(
         self,
@@ -254,6 +253,10 @@ class FastSentenceTransformer(object):
            By default, a list of tensors is returned.
             If convert_to_tensor, a stacked tensor is returned. If convert_to_numpy, a numpy matrix is returned.
         """
+        if device:
+            logger.warning(
+                f"Device can only be set during model FastSentenceTransformer initialization. Using {self.device}."
+            )
 
         if show_progress_bar is None:
             show_progress_bar = (
@@ -290,7 +293,7 @@ class FastSentenceTransformer(object):
 
             if normalize_embeddings:
                 norms = np.linalg.norm(embeddings, ord=2, axis=1, keepdims=True)
-                embeddings = embeddings/np.where(norms<1e-12, 1e-12, norms)
+                embeddings = embeddings / np.where(norms < 1e-12, 1e-12, norms)
 
             all_embeddings.extend(embeddings)
 
@@ -318,7 +321,6 @@ class FastSentenceTransformer(object):
         """
         if isinstance(sentences, str) or not hasattr(sentences, "__len__"):
             sentences = [sentences]
-
         inputs = self.tokenizer(sentences, padding=True, truncation=True, max_length=512, return_tensors="pt")
         ort_inputs = {k: v.cpu().numpy() for k, v in inputs.items()}
         ort_outputs_gpu = self.session.run(None, ort_inputs)
@@ -331,7 +333,18 @@ class FastSentenceTransformer(object):
         result = ort_result.get("sentence_embedding")
         return result
 
-    def _load_sbert_pooling(self):
+    def _load_sbert_model(self):
+        """
+        Loads a full sentence-transformers model
+        """
+        # Check if the config_sentence_transformers.json file exists (exists since v2 of the framework)
+        config_sentence_transformers_json_path = os.path.join(self.model_path, "config_sentence_transformers.json")
+        if os.path.exists(config_sentence_transformers_json_path):
+            with open(config_sentence_transformers_json_path) as fIn:
+                self._model_config = json.load(fIn)
+        self.__load_sbert_pooling()
+
+    def __load_sbert_pooling(self):
         """
         It loads the pooling model from the path specified in the modules.json file.
         :return: The pooling model
@@ -341,10 +354,21 @@ class FastSentenceTransformer(object):
             modules_config = json.load(fIn)
 
         pooling_model_path = os.path.join(self.model_path, modules_config[1].get("path"))
-        pooling_model = Pooling.load(pooling_model_path)
-        return pooling_model
+        self.pooling_model = Pooling.load(pooling_model_path)
 
-    def _load_sbert_session(self):
+    def _load_auto_model(self):
+        """
+        Creates a simple Transformer + Mean Pooling model and returns the modules
+        """
+        logger.warning(
+            "No sentence-transformers model found with name {}. Creating a new one with MEAN pooling.".format(
+                self.model_path
+            )
+        )
+        model = Transformer(self.model_path)
+        self.pooling_model = Pooling(model.get_word_embedding_dimension(), "mean")
+
+    def _load_session(self):
         """
         The function loads the ONNX model into an ONNXRuntime session,
         and sets the number of threads to the number of
@@ -355,7 +379,6 @@ class FastSentenceTransformer(object):
 
         sess_options.intra_op_num_threads = psutil.cpu_count(logical=True)
 
-        session = onnxruntime.InferenceSession(
-            self.export_model_name, sess_options, providers=[self.fast_onnxprovider]
+        self.session = onnxruntime.InferenceSession(
+            str(self.export_model_name), sess_options, providers=[self.fast_onnxprovider]
         )
-        return session
