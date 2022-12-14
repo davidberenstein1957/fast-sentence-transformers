@@ -92,13 +92,13 @@ class HFOnnx(Tensors):
         # dummy = dict(tokenizer(["test inputs"], return_tensors="pt"))
 
         # Default to BytesIO if no output file provided
-        if isinstance(output, str):
-            output = Path(output)
+        # if isinstance(output, str):
+        #     output = Path(output)
         output = output if output else BytesIO()
 
         export(
             model=model,
-            output=output,
+            output=Path(output),
             preprocessor=tokenizer,
             tokenizer=None,
             config=onnx_config,

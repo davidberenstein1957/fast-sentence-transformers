@@ -32,6 +32,7 @@ class FastSentenceTransformer(object):
         enable_overwrite: bool = True,
         quantize: bool = False,
     ):
+        self.device = device
         self.quantize = quantize
 
         if cache_folder is None:
@@ -171,15 +172,8 @@ class FastSentenceTransformer(object):
             self._load_sbert_model()
         else:  # Load with AutoModel
             self._load_auto_model()
-        try:
-            self.model2onnx()
-            self._load_session()
-        except Exception as e:
-            print(e)
-            raise ValueError(
-                f"Model {model_path} is not implemented. Take a look at"
-                " https://huggingface.co/docs/transformers/serialization."
-            )
+        self.model2onnx()
+        self._load_session()
 
     def model2onnx(self):
         """
@@ -259,6 +253,10 @@ class FastSentenceTransformer(object):
            By default, a list of tensors is returned.
             If convert_to_tensor, a stacked tensor is returned. If convert_to_numpy, a numpy matrix is returned.
         """
+        if device:
+            logger.warning(
+                f"Device can only be set during model FastSentenceTransformer initialization. Using {self.device}."
+            )
 
         if show_progress_bar is None:
             show_progress_bar = (
@@ -382,5 +380,5 @@ class FastSentenceTransformer(object):
         sess_options.intra_op_num_threads = psutil.cpu_count(logical=True)
 
         self.session = onnxruntime.InferenceSession(
-            self.export_model_name, sess_options, providers=[self.fast_onnxprovider]
+            str(self.export_model_name), sess_options, providers=[self.fast_onnxprovider]
         )
