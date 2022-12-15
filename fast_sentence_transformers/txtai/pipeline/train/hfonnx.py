@@ -159,7 +159,7 @@ class HFOnnx(Tensors):
         if not isinstance(output, Path):
             output = Path(output)
         # Quantize optimized model
-        quantize_dynamic(output, output, optimize_model=True)
+        quantize_dynamic(output, output, optimize_model=False)
 
         # Read file back to bytes if temp file was created
         if temp:
