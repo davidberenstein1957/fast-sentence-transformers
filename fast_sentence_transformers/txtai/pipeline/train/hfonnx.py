@@ -117,7 +117,6 @@ class HFOnnx(Tensors):
         #     dynamic_axes=dict(chain(inputs.items(), outputs.items())),
         # )
 
-        # Quantize model
         if quantize:
             if not ONNX_RUNTIME:
                 raise ImportError('onnxruntime is not available - install "pipeline" extra to enable')
@@ -157,7 +156,10 @@ class HFOnnx(Tensors):
         _ = WrapInferenceSession(output, sess_option, ["CPUExecutionProvider"])
 
         # Quantize optimized model
-        quantize_dynamic(output, output, optimize_model=False)
+        if not isinstance(output, Path):
+            output = Path(output)
+        # Quantize optimized model
+        quantize_dynamic(output, output, optimize_model=True)
 
         # Read file back to bytes if temp file was created
         if temp:
