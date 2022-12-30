@@ -47,3 +47,16 @@ def test_standalone_automodel(standalone_automodel):
     slow_transformer, fast_transformer = standalone_automodel
     assert all(np.isclose(slow_transformer.encode(text), fast_transformer.encode(text), rtol=3.0e-1, atol=3.0e-1))
     fast_transformer.encode([text] * 2)
+
+
+@pytest.fixture
+def standalone_extras():
+    model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    fast_transformer = FastSentenceTransformer(model, quantize=False, cache_folder="tmp")
+    return fast_transformer
+
+
+def test_standalone_extras(standalone_extras):
+    standalone_extras(text, output_value=None)
+    standalone_extras(text, output_value="token_embeddings")
+    standalone_extras(text, output_value="sentence_embedding")

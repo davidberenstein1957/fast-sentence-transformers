@@ -269,7 +269,6 @@ class FastSentenceTransformer(object):
         if output_value != "sentence_embedding":
             convert_to_tensor = False
             convert_to_numpy = False
-            raise NotImplementedError("This package only handles sentence_embeddings")
 
         input_was_string = False
         if isinstance(sentences, str) or not hasattr(
@@ -285,16 +284,23 @@ class FastSentenceTransformer(object):
         for start_index in trange(0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar):
             sentences_batch = sentences_sorted[start_index : start_index + batch_size]
 
-            embeddings = self.encode_batch(sentences_batch)
+            if output_value == "token_embeddings":
+                embeddings = self.encode_batch(sentences_batch, "token_embeddings")
+            elif output_value is None:  # Return all outputs
+                embeddings = self.encode_batch(sentences_batch, None)
+            elif output_value == "sentence_embedding":  # Sentence embeddings
+                embeddings = self.encode_batch(sentences_batch, "sentence_embedding")
+                # fixes for #522 and #487 to avoid oom problems on gpu with large datasets
+                if convert_to_numpy:
+                    embeddings = embeddings.cpu().detach().numpy()
 
-            # fixes for #522 and #487 to avoid oom problems on gpu with large datasets
-            if convert_to_numpy:
-                embeddings = embeddings.cpu().detach().numpy()
-
-            if normalize_embeddings:
-                norms = np.linalg.norm(embeddings, ord=2, axis=1, keepdims=True)
-                embeddings = embeddings / np.where(norms < 1e-12, 1e-12, norms)
-
+                if normalize_embeddings:
+                    norms = np.linalg.norm(embeddings, ord=2, axis=1, keepdims=True)
+                    embeddings = embeddings / np.where(norms < 1e-12, 1e-12, norms)
+            else:
+                raise NotImplementedError(
+                    "`output_value` can only be `token_embeddings`, `sentence_embedding` or None"
+                )
             all_embeddings.extend(embeddings)
 
         all_embeddings = [all_embeddings[idx] for idx in np.argsort(length_sorted_idx)]
@@ -309,7 +315,7 @@ class FastSentenceTransformer(object):
 
         return all_embeddings
 
-    def encode_batch(self, sentences: list) -> np.array:
+    def encode_batch(self, sentences: list, output_value: str) -> np.array:
         """
         1. The function takes a list of sentences as input.
         2. It then converts the sentences into a format that can be understood by the ONNX model.
@@ -330,8 +336,22 @@ class FastSentenceTransformer(object):
                 "attention_mask": inputs.get("attention_mask"),
             }
         )
-        result = ort_result.get("sentence_embedding")
-        return result
+        if output_value == "token_embeddings":
+            embeddings = []
+            for token_emb, attention in zip(ort_result.get("token_embeddings"), ort_result.get("attention_mask")):
+                last_mask_id = len(attention) - 1
+                while last_mask_id > 0 and attention[last_mask_id].item() == 0:
+                    last_mask_id -= 1
+
+                embeddings.append(token_emb[0 : last_mask_id + 1])
+        elif output_value is None:
+            embeddings = []
+            for sent_idx in range(len(ort_result.get("sentence_embedding"))):
+                row = {name: ort_result[name][sent_idx] for name in ort_result}
+                embeddings.append(row)
+        else:
+            embeddings = ort_result.get("sentence_embedding")
+        return embeddings
 
     def _load_sbert_model(self):
         """
