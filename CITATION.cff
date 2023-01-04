@@ -1,0 +1,8 @@
+cff-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: David
+    given-names: Berenstein
+title: "Fast `sentence-transformers` - a wrapper around sentence-transformers to speed up inference using ONNX and quantization."
+version: 0.4.0
+date-released: 2022-12-12
