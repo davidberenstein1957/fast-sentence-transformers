@@ -1,6 +1,7 @@
 # Archive reason
 
-This package has been archived but I've got good news! Sentence Transformers has an awesome maintainer again @tomaarsen, along with awesome ONNX integrations through optimum, therefore I decided to archive this project. https://github.com/UKPLab/sentence-transformers. Take a look here https://www.philschmid.de/optimize-sentence-transformers.
+!!! Warning
+    This package has been archived but I've got good news! Sentence Transformers has an awesome maintainer again @tomaarsen, along with awesome ONNX integrations through optimum, therefore I decided to archive this project. https://github.com/UKPLab/sentence-transformers. Take a look here https://www.philschmid.de/optimize-sentence-transformers.
 
 # Fast Sentence Transformers
 This repository contains code to run faster `sentence-transformers` using tools like quantization and `ONNX`. Just run your model much faster, while a lot of memory. There is not much to it!
