@@ -24,10 +24,11 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.13"
+python = ">=3.9,<3.13"
 sentence-transformers = ">=3,<4"
 optimum = {extras = ["onnxruntime"], version = ">1.10,<2"}
 setuptools = ">69"
+numpy = ">=2"
 
 [tool.poetry.extras]
 gpu = ["onnxruntime-gpu"]
