@@ -8,10 +8,19 @@ This repository contains code to run faster feature extractors using tools like 
 [![PyPi downloads](https://static.pepy.tech/personalized-badge/fast-sentence-transformers?period=total&units=international_system&left_color=grey&right_color=orange&left_text=pip%20downloads)](https://pypi.org/project/fast-sentence-transformers/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/ambv/black)
 
+> [Phillip Schmid](https://www.philschmid.de/optimize-sentence-transformers): "We successfully quantized our vanilla Transformers model with Hugging Face and managed to accelerate our model latency from 25.6ms to 12.3ms or 2.09x while keeping 100% of the accuracy on the stsb dataset.
+> But I have to say that this isn't a plug and play process you can transfer to any Transformers model, task or dataset.""
+
 ## Install
 
 ```bash
 pip install fast-sentence-transformers
+```
+
+Or, for GPU support:
+
+```bash
+pip install fast-sentence-transformers[gpu]
 ```
 
 ## Quickstart
