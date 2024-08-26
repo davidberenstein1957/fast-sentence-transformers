@@ -1,4 +1,5 @@
 # Fast Sentence Transformers
+
 This repository contains code to run faster feature extractors using tools like quantization, optimization and `ONNX`. Just run your model much faster, while using less of memory. There is not much to it!
 
 [![Python package](https://github.com/Pandora-Intelligence/fast-sentence-transformers/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/Pandora-Intelligence/fast-sentence-transformers/actions/workflows/python-package.yml)
@@ -20,7 +21,7 @@ pip install fast-sentence-transformers
 from fast_sentence_transformers import FastSentenceTransformer as SentenceTransformer
 
 # use any sentence-transformer
-encoder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu", quantize=True)
+encoder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
 
 encoder.encode("Hello hello, hey, hello hello")
 encoder.encode(["Life is too short to eat bad food!"] * 2)
@@ -28,7 +29,7 @@ encoder.encode(["Life is too short to eat bad food!"] * 2)
 
 ## Benchmark
 
-Non-exact, indicative benchmark for CPU usage with smallest and largest model on `sentence-transformers`
+Non-exact, indicative benchmark for speed an memory usage with smaller and larger model on `sentence-transformers`
 
 | model                                 | Type   | default | ONNX | ONNX+quantized | ONNX+GPU |
 | ------------------------------------- | ------ | ------- | ---- | -------------- | -------- |
