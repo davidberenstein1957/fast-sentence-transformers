@@ -131,3 +131,6 @@ dmypy.json
 /test.py
 /models
 tmp
+
+# Add for macOS
+.DS_Store
