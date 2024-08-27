@@ -30,7 +30,7 @@ pip install fast-sentence-transformers[gpu]
 from fast_sentence_transformers import FastSentenceTransformer as SentenceTransformer
 
 # use any sentence-transformer
-encoder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
+encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", device="cpu")
 
 encoder.encode("Hello hello, hey, hello hello")
 encoder.encode(["Life is too short to eat bad food!"] * 2)
