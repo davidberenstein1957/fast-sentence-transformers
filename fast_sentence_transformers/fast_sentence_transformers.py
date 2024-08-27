@@ -14,7 +14,6 @@ from transformers import AutoTokenizer, Pipeline
 DEFAULT_EMBEDDING_MODEL = "Snowflake/snowflake-arctic-embed-xs"
 
 # Set up logging
-logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
