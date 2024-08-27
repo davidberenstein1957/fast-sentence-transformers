@@ -1,7 +1,7 @@
 import logging
 import warnings
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -11,17 +11,22 @@ from optimum.onnxruntime import ORTModelForFeatureExtraction, ORTOptimizer, ORTQ
 from optimum.onnxruntime.configuration import AutoQuantizationConfig, OptimizationConfig
 from transformers import AutoTokenizer, Pipeline
 
-DEFAULT_EMBEDDING_MODEL = "Snowflake/snowflake-arctic-embed-xs"
+from fast_sentence_transformers.dataclasses import ModelInput, ModelOutputs
+
+# Constants
+_DEFAULT_EMBEDDING_MODEL = "Snowflake/snowflake-arctic-embed-xs"
+_MB_SIZE = 1024 * 1024
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 
 class _SentenceEmbeddingPipeline(Pipeline):
-    def _sanitize_parameters(self, **kwargs):
+    def _sanitize_parameters(self, **kwargs: Any) -> tuple[dict, dict, dict]:
         return {}, {}, {}
 
-    def preprocess(self, inputs: Union[str, List[str]]) -> dict:
+    def preprocess(self, inputs: str | list[str]) -> ModelInput:
         """
         Preprocess the input text.
 
@@ -33,7 +38,7 @@ class _SentenceEmbeddingPipeline(Pipeline):
         """
         return self.tokenizer(inputs, padding=True, truncation=True, return_tensors="pt")
 
-    def _forward(self, model_inputs: dict) -> dict:
+    def _forward(self, model_inputs: ModelInput) -> ModelOutputs:
         """
         Perform forward pass on the model.
 
@@ -49,7 +54,7 @@ class _SentenceEmbeddingPipeline(Pipeline):
             "attention_mask": model_inputs["attention_mask"],
         }
 
-    def postprocess(self, model_outputs: dict) -> torch.Tensor:
+    def postprocess(self, model_outputs: ModelOutputs) -> torch.Tensor:
         """
         Postprocess the model outputs.
 
@@ -82,9 +87,9 @@ class _SentenceEmbeddingPipeline(Pipeline):
 class FastSentenceTransformer:
     def __init__(
         self,
-        model_name_or_path: Optional[str] = DEFAULT_EMBEDDING_MODEL,
-        device: Optional[str] = "cpu",
-        verbose: Optional[bool] = True,
+        model_name_or_path: str = _DEFAULT_EMBEDDING_MODEL,
+        device: str = "cpu",
+        verbose: bool = True,
     ):
         """
         FastSentenceTransformers is a class for efficient sentence embedding using transformers models.
@@ -97,9 +102,6 @@ class FastSentenceTransformer:
         self.device = device
         self.model_name_or_path = model_name_or_path
         self.onnx_cache = Path("~/.cache/onnx").expanduser()
-        self.model = None
-        self.tokenizer = None
-        self.pipeline = None
 
         if verbose:
             logger.setLevel(logging.INFO)
@@ -125,29 +127,27 @@ class FastSentenceTransformer:
         logger.info("Quantization complete...")
         self.log_model_sizes()
 
-    def load_model(self):
+    def load_model(self) -> None:
         """
         Load the pre-trained model and tokenizer.
         """
         self.model: OptimizedModel = ORTModelForFeatureExtraction.from_pretrained(self.model_name_or_path, export=True)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
 
-    def save_model(self):
+    def save_model(self) -> None:
         """
         Save the pre-trained model and tokenizer.
         """
         self.model.save_pretrained(self.onnx_cache)
         self.tokenizer.save_pretrained(self.onnx_cache)
 
-    def create_pipeline(self):
+    def create_pipeline(self) -> None:
         """
         Create the sentence embedding pipeline.
         """
         self.pipeline = _SentenceEmbeddingPipeline(model=self.model, tokenizer=self.tokenizer, device=self.device)
 
-    def encode(
-        self, text: Union[str, List[str]], convert_to_numpy: bool = True
-    ) -> Union[List[torch.Tensor], List[np.ndarray]]:
+    def encode(self, text: str | list[str], convert_to_numpy: bool = True) -> list[torch.Tensor] | list[np.ndarray]:
         """
         Encode the input text into sentence embeddings.
 
@@ -165,11 +165,11 @@ class FastSentenceTransformer:
 
         prediction = self.pipeline(text)
         if convert_to_numpy:
-            prediction = np.array([pred.cpu().detach().numpy() for pred in prediction])
+            prediction = np.stack([pred.cpu().detach().numpy() for pred in prediction])
 
         return prediction[0][0] if single_input else prediction
 
-    def optimize_model(self):
+    def optimize_model(self) -> None:
         """
         Optimize the model using ONNX Runtime.
         """
@@ -184,7 +184,7 @@ class FastSentenceTransformer:
             optimization_config=optimization_config,
         )
 
-    def load_optimized_model(self):
+    def load_optimized_model(self) -> None:
         """
         Load the optimized model.
         """
@@ -195,7 +195,7 @@ class FastSentenceTransformer:
         )
         self.create_pipeline()
 
-    def quantize_model(self):
+    def quantize_model(self) -> None:
         """
         Quantize the model using ONNX Runtime.
         """
@@ -207,7 +207,7 @@ class FastSentenceTransformer:
             quantization_config=dqconfig,
         )
 
-    def load_quantized_model(self):
+    def load_quantized_model(self) -> None:
         """
         Load the quantized model.
         """
@@ -219,15 +219,13 @@ class FastSentenceTransformer:
         self.tokenizer = AutoTokenizer.from_pretrained(self.onnx_cache)
         self.create_pipeline()
 
-    def log_model_sizes(self):
+    def log_model_sizes(self) -> None:
         """
         Print the sizes of the model files.
         """
-        size = (self.onnx_cache / "model.onnx").stat().st_size / (1024 * 1024)
-        optimized_size = (self.onnx_cache / "model_optimized.onnx").stat().st_size / (1024 * 1024)
-        quantized_size = (self.onnx_cache / f"model_optimized_quantized_{self.device}.onnx").stat().st_size / (
-            1024 * 1024
-        )
+        size = (self.onnx_cache / "model.onnx").stat().st_size / _MB_SIZE
+        optimized_size = (self.onnx_cache / "model_optimized.onnx").stat().st_size / _MB_SIZE
+        quantized_size = (self.onnx_cache / f"model_optimized_quantized_{self.device}.onnx").stat().st_size / _MB_SIZE
         logger.info(f"Model file size: {size:.2f} MB")
         logger.info(f"Optimized model file size: {optimized_size:.2f} MB")
         logger.info(f"Quantized and optimized model file size: {quantized_size:.2f} MB")
